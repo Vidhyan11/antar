@@ -88,12 +88,12 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 
 | Day | Date | Deliverable | |
 |---|---|---|---|
-| 1 | Sat 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
-| 2 | Sun 31 Aug | Sensorium · naive baseline bot · holdout assignment | ⬜ |
-| 3 | Mon 1 Sep | ATE with always-valid confidence sequences | ⬜ |
-| 4 | Tue 2 Sep | Uplift/CATE model · Qini · sensitivity sweep | ⬜ |
-| 5 | Wed 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions | ⬜ |
-| 6 | Thu 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · console | ⬜ |
-| 7 | Fri 5 Sep | Pitch video · architecture doc · submission | ⬜ |
+| 1 | Sun 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
+| 2 | Mon 31 Aug | Sensorium · naive baseline bot | ⬜ |
+| 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences | ⬜ |
+| 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep | ⬜ |
+| 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions | ⬜ |
+| 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L | ⬜ |
+| 7 | Sat 5 Sep | Console · pitch video · architecture doc · submission | ⬜ |
 
 See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.
