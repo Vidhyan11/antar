@@ -2,6 +2,8 @@
 
 ### *Only the difference counts.*
 
+[![CI](https://github.com/Vidhyan11/antar/actions/workflows/ci.yml/badge.svg)](https://github.com/Vidhyan11/antar/actions/workflows/ci.yml)
+
 **Track 03 — AI Revenue Recovery · Razorpay AI Buildathon**
 
 A payment-recovery agent whose objective is **incremental** recovery — money that
@@ -84,15 +86,14 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 
 ## Status
 
-- [x] **Day 1** — simulator with ground-truth potential outcomes; hash-chained ledger
-- [ ] Day 2 — Sensorium (failure normalisation)
-- [ ] Day 3 — Razorpay test-mode integration
-- [ ] Day 4 — naive baseline bot (the control condition)
-- [ ] Day 5 — holdout assignment, ATE with always-valid CIs
-- [ ] Day 6 — uplift model, Qini evaluation against known ground truth
-- [ ] Day 7 — triage agent, correlated-failure detection, incident freeze
-- [ ] Day 8 — actuator, budgeted allocation, compliance linter, stopping rules
-- [ ] Day 9 — Counterfactual P&L, sensitivity sweep, console
-- [ ] Day 10 — pitch video, architecture doc
+| Day | Date | Deliverable | |
+|---|---|---|---|
+| 1 | Sat 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
+| 2 | Sun 31 Aug | Sensorium · naive baseline bot · holdout assignment | ⬜ |
+| 3 | Mon 1 Sep | ATE with always-valid confidence sequences | ⬜ |
+| 4 | Tue 2 Sep | Uplift/CATE model · Qini · sensitivity sweep | ⬜ |
+| 5 | Wed 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions | ⬜ |
+| 6 | Thu 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · console | ⬜ |
+| 7 | Fri 5 Sep | Pitch video · architecture doc · submission | ⬜ |
 
 See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.
