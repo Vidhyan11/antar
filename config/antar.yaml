@@ -1,0 +1,89 @@
+# ANTAR simulation configuration.
+#
+# Every assumption the simulator makes lives here, in one auditable place.
+# The self-recovery rates below are the load-bearing assumption of the whole
+# project -- which is exactly why they are a config knob and not a constant.
+# Day 9's sensitivity sweep re-runs the entire pipeline across a range of them
+# to show that the *policy ranking* holds even where the magnitude does not.
+
+seed: 20260830
+
+population:
+  n_customers: 5000
+  # Latent reliability: how likely this customer is to sort themselves out
+  # without any help. Drives Y(0). Observable proxy: prior_self_recoveries.
+  reliability_beta: [2.4, 2.0]
+  # Latent responsiveness: how much a well-timed intervention moves them.
+  # Drives the treatment effect. Observable proxies: tenure, consent, engagement.
+  responsiveness_beta: [2.0, 2.6]
+  languages: ["en", "hi", "ta", "te", "bn", "mr"]
+  language_weights: [0.34, 0.28, 0.10, 0.09, 0.10, 0.09]
+  consent_rate: 0.86
+
+window:
+  days: 30
+  attempts_per_day: 2400
+  base_failure_rate: 0.14
+
+rails:
+  issuers: ["HDFC", "SBI", "ICICI", "AXIS", "KOTAK", "PNB", "BOB", "YES"]
+  issuer_weights: [0.20, 0.22, 0.14, 0.12, 0.09, 0.10, 0.07, 0.06]
+  methods: ["UPI", "CARD", "NETBANKING"]
+  method_weights: [0.62, 0.26, 0.12]
+  # Correlated failure incidents. These are what the Triage agent must detect,
+  # and what a naive dunning bot would answer with thousands of messages.
+  outages:
+    count: 6
+    min_minutes: 25
+    max_minutes: 180
+    failure_rate_during: 0.86
+    # Share of outage-window failures that are class A (the rest are ordinary
+    # background failures that happen to coincide).
+    class_a_share: 0.94
+
+amount:
+  lognormal_mu: 6.6      # median around INR 735
+  lognormal_sigma: 0.95
+  min_paise: 4900
+  max_paise: 9500000
+
+# Share of failures falling in each class, outside of outage windows.
+class_mix:
+  A_TRANSIENT_RAIL: 0.42
+  B_AUTH_DROPOFF: 0.18
+  C_FUNDS: 0.16
+  D_DEAD_INSTRUMENT: 0.08
+  E_RISK_DECLINE: 0.06
+  F_INTENT_LOSS: 0.10
+
+# THE CORE ASSUMPTION.
+#
+# p0 = P(recovers within the window with NO intervention)   -- the counterfactual
+# p1 = P(recovers within the window WITH intervention)      -- the treated arm
+#
+# Read the uplift column, not the p1 column. Class A has the best-looking
+# treated recovery rate in the table and is worth essentially nothing, because
+# those customers were going to retry anyway. Class D looks like a poor bet on
+# p1 and is the single most valuable cohort in the book.
+#
+#                        p0     p1     uplift
+#   A_TRANSIENT_RAIL    0.92   0.94    +0.02   <- best success rate, no value
+#   B_AUTH_DROPOFF      0.55   0.74    +0.19
+#   C_FUNDS             0.12   0.40    +0.28
+#   D_DEAD_INSTRUMENT   0.01   0.34    +0.33   <- worst success rate, most value
+#   E_RISK_DECLINE      0.09   0.22    +0.13
+#   F_INTENT_LOSS       0.10   0.30    +0.20
+recovery:
+  A_TRANSIENT_RAIL:  {p0: 0.92, p1: 0.94}
+  B_AUTH_DROPOFF:    {p0: 0.55, p1: 0.74}
+  C_FUNDS:           {p0: 0.12, p1: 0.40}
+  D_DEAD_INSTRUMENT: {p0: 0.01, p1: 0.34}
+  E_RISK_DECLINE:    {p0: 0.09, p1: 0.22}
+  F_INTENT_LOSS:     {p0: 0.10, p1: 0.30}
+
+# How much the latent customer traits are allowed to move the class base rates.
+# Without this, every customer in a class is identical and there is no
+# heterogeneous treatment effect for the uplift model to find on day 6.
+heterogeneity:
+  reliability_span: 0.55      # scales p0 within [1-span/2, 1+span/2]
+  responsiveness_span: 1.30   # scales the (p1 - p0) gap

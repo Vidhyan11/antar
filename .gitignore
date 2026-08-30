@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+data/
+*.db
+.venv/
+venv/
+.env
+fixtures/llm_cache/
