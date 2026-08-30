@@ -371,11 +371,44 @@ You cannot get TRAI DLT registration in ten days. So:
 
 State the mock plainly in the README. A judge who spots an unacknowledged fake channel discounts everything else; a judge who reads "channels are mocked because DLT registration takes weeks — here's the adapter interface and the provider we'd use" reads it as competence.
 
-#### Console
+#### Console — and how the whole thing gets demonstrated
 
-**Next.js 15 + React + TypeScript + Tailwind + shadcn/ui**, charts in **Recharts** — Qini curve, P&L waterfall, sensitivity-sweep heatmap, live incident timeline. **Streamlit** is the fallback if you're behind schedule.
+**There is no website deliverable.** The submission is a public repo, a five-minute video, and the architecture. Nobody visits a URL. The console is a *prop for the video*, which means legibility in twenty seconds of screen recording beats visual sophistication every time.
 
-This is judged on a five-minute video. Budget a day for the console; a beautiful P&L screen is worth more here than another model refinement.
+**Stack: Streamlit**, with Plotly for charts. Not Next.js. On a compressed timeline with evening-sized work slots the trade is clear:
+
+| | Next.js + Recharts | Streamlit + Plotly |
+| ------------------------------- | ------------------ | ---------------------------------------- |
+| Needs a FastAPI layer to serve data | Yes            | No — reads the ledger and DuckDB directly |
+| Separate build and design pass  | Yes                | No                                       |
+| Realistic cost                  | A full day or more | 3–4 hours                                |
+| Looks better                    | Somewhat           | Adequate with care                       |
+
+That "somewhat" is not worth a day. A console competing with the pitch video on the final day is how people end up shipping neither.
+
+**Build it incrementally — one panel per day, as each capability lands.** Never as a final-day task.
+
+| Day | Panel that appears                                                   |
+| --- | -------------------------------------------------------------------- |
+| 3   | Holdout split, and the ATE with its always-valid confidence interval |
+| 4   | Qini curve and the sensitivity sweep                                 |
+| 5   | **Incident timeline** — outage injected, baseline flooding, ANTAR frozen |
+| 6   | **Counterfactual P&L** — the money shot                              |
+| 7   | Polish, then record                                                  |
+
+Each panel is 30–45 minutes on top of work already being done that evening. By the final day the console exists and the only remaining task is recording.
+
+**Put each beat where it lands hardest.** Not everything belongs in the UI:
+
+- **Ledger tamper demo → terminal.** `chain BROKEN at seq=2` reads as forensic evidence. The same message in a styled red box reads as decoration.
+- **Stopping rules firing → terminal logs.**
+- **P&L, Qini, sensitivity sweep, incident timeline → console.** These need to look like a financial statement and real charts.
+
+**Free footage worth thirty seconds of the video: the Razorpay dashboard itself.** Test-mode payment links, orders and webhook delivery logs all appear in the real dashboard. Razorpay's own product confirming the agent is genuinely executing is more persuasive than any interface you could build.
+
+**One cheap hedge:** have the pipeline emit a static `report.html` (Plotly, self-contained) and commit it. A judge who will not clone and run anything still sees the P&L and the charts by clicking one file in the repo. Roughly an hour of work.
+
+At submission, the Streamlit app can also go to Streamlit Community Cloud for a free live URL — but only once the repo goes public.
 
 #### Testing and reproducibility
 

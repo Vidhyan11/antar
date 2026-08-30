@@ -90,10 +90,16 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 |---|---|---|---|
 | 1 | Sun 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
 | 2 | Mon 31 Aug | Sensorium · naive baseline bot | ⬜ |
-| 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences | ⬜ |
-| 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep | ⬜ |
-| 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions | ⬜ |
-| 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L | ⬜ |
-| 7 | Sat 5 Sep | Console · pitch video · architecture doc · submission | ⬜ |
+| 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ⬜ |
+| 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ⬜ |
+| 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ⬜ |
+| 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ⬜ |
+| 7 | Sat 5 Sep | Console polish · pitch video · architecture doc · submission | ⬜ |
+
+The console is a **Streamlit** app built one panel per evening, never as a
+final-day task. The forensic beats — ledger tamper detection, stopping rules
+firing — stay in the terminal, where they read as evidence rather than
+decoration. The pipeline also emits a self-contained `report.html` so the P&L
+and charts are visible without running anything.
 
 See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.
