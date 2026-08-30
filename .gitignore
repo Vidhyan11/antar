@@ -10,3 +10,6 @@ data/
 venv/
 .env
 fixtures/llm_cache/
+*.egg-info/
+build/
+dist/
