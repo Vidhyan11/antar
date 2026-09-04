@@ -39,6 +39,7 @@ python scripts/run_day2.py     # baseline bot: claimed vs caused
 python scripts/run_day3.py     # holdout, ATE, peeking demo
 python scripts/run_day4.py     # uplift model, Qini, sensitivity sweep
 python scripts/run_day5.py     # triage, incident freeze, actions
+python scripts/run_day6.py     # compliance, stopping rules, the P&L
 pytest -q
 
 streamlit run console/app.py   # the console reads what the scripts write
@@ -90,6 +91,8 @@ cost without value.
 | `antar/triage/agent.py` | The triage agent, verdict validation, and the freeze registry |
 | `antar/llm/provider.py` | Fixture-first model layer — runs with no API key |
 | `antar/actuator.py` | Bounded, gated, logged actions against Razorpay test mode |
+| `antar/compliance.py` | The compliance linter and the self-pausing arm monitor |
+| `antar/economics.py` | The Counterfactual P&L |
 | `console/app.py` | Streamlit console — a viewer over the pipeline's artifacts |
 | `config/antar.yaml` | Every assumption, in one auditable place |
 | `scripts/run_day1.py` | End-to-end day-1 demo |
@@ -97,6 +100,7 @@ cost without value.
 | `scripts/run_day3.py` | Holdout, ATE, and the peeking demonstration |
 | `scripts/run_day4.py` | Uplift model, Qini, and the sensitivity sweep |
 | `scripts/run_day5.py` | Triage, the incident freeze, and Razorpay actions |
+| `scripts/run_day6.py` | Compliance, stopping rules, and the P&L |
 | `tests/` | Invariants, including property-based tests |
 
 ## Why a simulator
@@ -120,7 +124,7 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 | 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ✅ |
 | 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ✅ |
 | 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ✅ |
-| 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ⬜ |
+| 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ✅ |
 | 7 | Sat 5 Sep | Console polish · pitch video · architecture doc · submission | ⬜ |
 
 The console is a **Streamlit** app built one panel per evening, never as a
@@ -148,5 +152,35 @@ Detection is a large-numbers problem, so recall is reported against outages that
 were reachable at all. A rail carrying almost no traffic cannot have an outage
 detected by any method, and scoring against those would be marking our own
 homework generously.
+
+## The Counterfactual P&L
+
+Both policies run under the *same* compliance rules and the same incident freeze —
+comparing a constrained system against an unconstrained one would flatter whichever
+we left unbuckled.
+
+```
+                                        baseline         ANTAR
+headline claim                         8,473,813     2,228,099
+actually caused                          726,244     1,171,670
+retention damage                         141,600       112,800
+NET VALUE CREATED                        110,961       289,138
+contacts                                   4,088         2,288
+headline overstates by                     11.7x          1.9x
+```
+
+ANTAR creates **2.6x the net value on 44% fewer contacts.** The baseline wins the
+headline and loses the P&L: more messages, more gross recovery booked, less money
+actually caused, more customers burned doing it. On a conventional dashboard only
+the second of those is visible.
+
+The **retention-damage line is measured, not assumed** — a treated-vs-control
+opt-out delta priced at merchant LTV. No vendor reports it, for the obvious reason
+that a tool paid on gross recovery has no incentive to price the customers it burns.
+
+**Read the interval before quoting the point estimate.** Net value carries a 95%
+always-valid CI of [-1,493,042, 2,071,319], which is enormous and honest:
+per-transaction net value runs from a few rupees of margin to minus a whole customer
+lifetime. The defensible claim is the ordering and the efficiency, not the rupee figure.
 
 See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.

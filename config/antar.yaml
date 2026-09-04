@@ -92,3 +92,51 @@ recovery:
 heterogeneity:
   reliability_span: 0.55      # scales p0 within [1-span/2, 1+span/2]
   responsiveness_span: 1.30   # scales the (p1 - p0) gap
+
+# Everything the Counterfactual P&L needs to turn recoveries into net value.
+#
+# The point of this block is that recovering money is not the same as creating
+# it. A contact costs a fraction of a rupee to send, sometimes costs margin in
+# discounts, and sometimes costs the customer. Only the last one is invisible on
+# a conventional dashboard, which is exactly why it belongs here.
+economics:
+  margin_rate: 0.35              # gross margin on recovered revenue
+  customer_ltv_inr: 2400.0       # what losing a customer costs
+
+  # Per-contact channel cost in INR. Silent retries and re-routes cost nothing
+  # to the customer's attention because nothing reaches them.
+  channel_cost_inr:
+    silent_retry: 0.0
+    reroute_alternate_rail: 0.0
+    retry_on_inflow_day: 0.15    # SMS
+    same_session_nudge: 0.35     # WhatsApp
+    instrument_update_link: 0.35
+    reminder_with_link: 0.35
+
+  # Concession offered, as a share of transaction value. Only the reminder path
+  # carries one; the rest are service messages, not offers.
+  discount_rate:
+    reminder_with_link: 0.05
+
+  # Opt-out potential outcomes. base_rate is churn that happens anyway;
+  # contact_rate is the additional hazard from being messaged, divided by the
+  # customer's tolerance. Both are measured back out of the control arm rather
+  # than assumed by the P&L.
+  optout:
+    base_rate: 0.002
+    contact_rate: 0.012
+
+# Compliance constraints, enforced as code rather than described in prose.
+# VERIFY THESE AGAINST CURRENT INDIAN REGULATION BEFORE PITCHING -- the shapes
+# are right, the exact values need a source. See section 12 of the proposal.
+compliance:
+  quiet_hours_start: 21          # IST; no outbound contact after this hour
+  quiet_hours_end: 8             # ...or before this one
+  max_contacts_per_window: 3
+  contact_window_days: 7
+  require_consent: true
+  # Service messages that carry no marketing content are exempt from consent,
+  # which mirrors how transactional messaging is actually treated.
+  consent_exempt_actions: ["silent_retry", "reroute_alternate_rail", "retry_on_inflow_day"]
+  # Actions that never reach the customer are exempt from quiet hours too.
+  silent_actions: ["silent_retry", "reroute_alternate_rail"]

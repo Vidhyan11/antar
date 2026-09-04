@@ -105,10 +105,24 @@ class FailureEvent:
     y0: int            # realised outcome if untreated
     y1: int            # realised outcome if treated
 
+    # Contacting someone costs more than the SMS. These are the potential
+    # outcomes for *opting out* -- the second dimension the industry never
+    # prices, because the tool being paid on gross recovery has no reason to.
+    # Kept as a separate pair so recovery outcomes are untouched by it.
+    q0: float = 0.0    # P(opt out | untreated)
+    q1: float = 0.0    # P(opt out | treated)
+    o0: int = 0        # realised opt-out if untreated
+    o1: int = 0        # realised opt-out if treated
+
     @property
     def true_uplift(self) -> float:
         """Individual expected treatment effect. The thing day 6 must recover."""
         return self.p1 - self.p0
+
+    @property
+    def true_optout_uplift(self) -> float:
+        """Extra probability of losing this customer because we contacted them."""
+        return self.q1 - self.q0
 
     @property
     def stratum(self) -> str:

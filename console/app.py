@@ -424,5 +424,91 @@ if day5 is not None:
         "kind of dishonesty."
     )
 
+day6 = load("day6_results.json")
+if day6 is not None:
+    b, a = day6["pnl"]["baseline"], day6["pnl"]["antar"]
+    comp = day6["compliance"]
+
+    st.divider()
+    st.subheader("The Counterfactual P&L")
+
+    n1, n2, n3 = st.columns(3)
+    n1.metric("Baseline — net value", f"₹{b['net_value']:,.0f}",
+              f"headline overstates {b['overstatement']:.1f}x", delta_color="off")
+    n2.metric("ANTAR — net value", f"₹{a['net_value']:,.0f}",
+              f"headline overstates {a['overstatement']:.1f}x", delta_color="off")
+    n3.metric("Contacts", f"{a['contacts']:,} vs {b['contacts']:,}",
+              f"{1 - a['contacts'] / max(b['contacts'], 1):.0%} fewer", delta_color="off")
+
+    # A waterfall is the right form here: every line after the first is a
+    # subtraction, and the whole argument is what survives them.
+    wf = go.Figure(go.Waterfall(
+        orientation="v",
+        measure=["absolute", "relative", "total", "relative", "relative", "relative", "total"],
+        x=["Last-touch<br>claim", "Self-recovery", "Incremental<br>recovery",
+           "Channel cost", "Discounts", "Retention<br>damage", "Net value"],
+        y=[a["last_touch_claim"], -a["self_recovery"], 0,
+           -(a["last_touch_claim"] - a["self_recovery"] - a["incremental_margin"]),
+           -a["discount_cost"], -a["retention_damage"], 0],
+        connector=dict(line=dict(color=MUTED, width=1)),
+        increasing=dict(marker=dict(color=SERIES_1)),
+        decreasing=dict(marker=dict(color=SERIES_2)),
+        totals=dict(marker=dict(color=MUTED)),
+        hovertemplate="%{x}<br>₹%{y:,.0f}<extra></extra>",
+    ))
+    st.plotly_chart(base_layout(wf, 420, ytitle="INR"), use_container_width=True)
+
+    st.caption(
+        f"**Retention damage of ₹{a['retention_damage']:,.0f}** comes from a measured "
+        f"treated-vs-control opt-out delta of {a['optout_delta']:+.4f} — about "
+        f"{a['customers_lost']:.0f} customers — priced at merchant LTV. No vendor reports "
+        "this line, for the obvious reason that a tool paid on gross recovery has no "
+        "incentive to price the customers it burns."
+    )
+
+    st.warning(
+        f"**Read the interval before quoting the point estimate.** ANTAR's net value is "
+        f"₹{a['net_value']:,.0f} with a 95% always-valid CI of "
+        f"[₹{a['ci_low']:,.0f}, ₹{a['ci_high']:,.0f}]. That is enormous, and it is honest: "
+        "per-transaction net value runs from a few rupees of margin to minus a whole "
+        "customer lifetime, so a time-uniform bound over that spread is necessarily loose. "
+        "The defensible claim is the **ordering and the efficiency**, not the exact rupee "
+        "figure."
+    )
+
+    with st.expander("Both statements, line by line"):
+        st.code(day6["pnl_text"]["baseline"], language=None)
+        st.code(day6["pnl_text"]["antar"], language=None)
+
+    st.divider()
+    st.subheader("What the rules refused, and what stopped itself")
+
+    v1, v2 = st.columns([1, 1])
+    with v1:
+        st.markdown(
+            f"**Compliance** — {comp['selected']:,} selected, "
+            f"**{comp['delivered']:,} delivered**, {comp['veto_total']:,} vetoed"
+        )
+        for rule, n in sorted(comp["vetoes"].items(), key=lambda kv: -kv[1]):
+            st.markdown(f"- `{rule}` — {n:,}")
+        st.caption(
+            "Every veto is written to the ledger with its reason. An audit trail that "
+            "only records what happened is half a trail; the refusals are the half "
+            "showing the rules were load-bearing rather than decorative."
+        )
+    with v2:
+        st.markdown("**Stopping rules** — the trial's safety board")
+        for arm in day6["arms"]:
+            icon = "⏸" if arm["paused"] else "▶"
+            st.markdown(
+                f"{icon} `{arm['arm']}` {arm['effect']:+.3f} "
+                f"[{arm['lower']:+.3f}, {arm['upper']:+.3f}] — {arm['reason']}"
+            )
+        st.caption(
+            "An arm that cannot be distinguished from doing nothing pauses itself. "
+            "Continuous monitoring is only legitimate with a time-uniform interval, "
+            "which is why day 3 built one."
+        )
+
 st.divider()
 st.caption(f"seed {cfg['seed']} · n={cfg['n']:,} failures · generated {day3['generated_at'][:19]}Z")

@@ -149,6 +149,21 @@ class Simulator:
         # One uniform, two thresholds -> y1 >= y0 by construction.
         return p0, p1, int(u < p0), int(u < p1)
 
+    def _optout_outcomes(self, cust: Customer, u: float) -> tuple[float, float, int, int]:
+        """Potential outcomes for opting out, treated versus not.
+
+        Same single-uniform construction as recovery, so being contacted can
+        never make someone *less* likely to leave. Customers who already
+        tolerate a lot -- long tenure, consent given -- are less annoyed by one
+        more message, which is what gives the model something real to find when
+        we later charge the agent for the damage it does.
+        """
+        o = self.cfg.economics.optout
+        base = float(o.base_rate)
+        tolerance = 0.35 + 0.65 * cust._responsiveness
+        contact = float(np.clip(base + o.contact_rate / max(tolerance, 0.2), 0.0, 0.5))
+        return base, contact, int(u < base), int(u < contact)
+
     # -- main loop -------------------------------------------------------
 
     def run(self) -> SimulationResult:
@@ -180,6 +195,7 @@ class Simulator:
         fail_roll = rng.random(n_attempts)
         class_roll = rng.random(n_attempts)
         outcome_roll = rng.random(n_attempts)
+        optout_roll = rng.random(n_attempts)
 
         events: list[FailureEvent] = []
         for n, i in enumerate(order):
@@ -199,6 +215,7 @@ class Simulator:
             reason_code = str(rng.choice(CODES_BY_CLASS[cls]))
             cust = customers[str(who[i])]
             p0, p1, y0, y1 = self._potential_outcomes(cls, cust, float(outcome_roll[i]))
+            q0, q1, o0, o1 = self._optout_outcomes(cust, float(optout_roll[i]))
 
             events.append(
                 FailureEvent(
@@ -215,6 +232,10 @@ class Simulator:
                     p1=p1,
                     y0=y0,
                     y1=y1,
+                    q0=q0,
+                    q1=q1,
+                    o0=o0,
+                    o1=o1,
                 )
             )
 

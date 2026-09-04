@@ -18,7 +18,8 @@ from antar.config import load_config
 from antar.simulator.engine import Simulator
 from antar.taxonomy import CLASS_META, DeclineClass, classify
 
-GROUND_TRUTH_FIELDS = {"p0", "p1", "y0", "y1", "true_uplift", "stratum",
+GROUND_TRUTH_FIELDS = {"p0", "p1", "y0", "y1", "q0", "q1", "o0", "o1",
+                       "true_uplift", "true_optout_uplift", "stratum",
                        "_reliability", "_responsiveness"}
 
 

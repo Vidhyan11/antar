@@ -28,10 +28,19 @@ class Truth:
     y0: int
     y1: int
     stratum: str
+    q0: float = 0.0    # P(opt out | untreated)
+    q1: float = 0.0    # P(opt out | treated)
+    o0: int = 0        # realised opt-out if untreated
+    o1: int = 0        # realised opt-out if treated
 
     @property
     def uplift(self) -> float:
         return self.p1 - self.p0
+
+    @property
+    def optout_uplift(self) -> float:
+        """The damage half of the ledger: extra churn caused by contacting."""
+        return self.q1 - self.q0
 
     def outcome(self, treated: bool) -> int:
         return self.y1 if treated else self.y0
@@ -42,7 +51,9 @@ class TruthBook(Mapping[str, Truth]):
 
     def __init__(self, events: Iterable[FailureEvent]) -> None:
         self._truth: dict[str, Truth] = {
-            ev.txn_id: Truth(ev.p0, ev.p1, ev.y0, ev.y1, ev.stratum) for ev in events
+            ev.txn_id: Truth(ev.p0, ev.p1, ev.y0, ev.y1, ev.stratum,
+                             ev.q0, ev.q1, ev.o0, ev.o1)
+            for ev in events
         }
 
     def __getitem__(self, txn_id: str) -> Truth:

@@ -33,6 +33,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from antar.compliance import ComplianceLinter
 from antar.ledger import Ledger
 from antar.sensorium import FailureRecord
 from antar.taxonomy import CLASS_META, DeclineClass
@@ -64,6 +65,7 @@ class ActionResult:
     dry_run: bool
     reference: str | None = None
     error: str | None = None
+    rule: str = ""
     request: dict[str, Any] = field(default_factory=dict)
 
 
@@ -141,9 +143,11 @@ class Actuator:
         ledger: Ledger | None = None,
         *,
         live_call_budget: int = 5,
+        linter: ComplianceLinter | None = None,
     ) -> None:
         self.client = client or RazorpayClient()
         self.ledger = ledger
+        self.linter = linter
         # Only a handful of real calls are made even when credentials exist:
         # enough to prove the integration on camera, few enough to stay well
         # inside test-mode rate limits. The rest are recorded as dry-run.
@@ -167,6 +171,16 @@ class Actuator:
                 ), record))
                 continue
 
+            action = ACTION_BY_CLASS[record.decline_class]
+            if self.linter is not None:
+                verdict = self.linter.check(record, action)
+                if not verdict:
+                    results.append(self._log(ActionResult(
+                        record.txn_id, "blocked_by_compliance", executed=False,
+                        dry_run=True, error=verdict.reason, rule=verdict.rule,
+                    ), record))
+                    continue
+
             if record.amount_paise > MAX_ACTION_PAISE:
                 results.append(self._log(ActionResult(
                     record.txn_id, "escalated_to_human", executed=False, dry_run=True,
@@ -174,7 +188,10 @@ class Actuator:
                 ), record))
                 continue
 
-            results.append(self._log(self._act(record), record))
+            result = self._log(self._act(record), record)
+            if self.linter is not None:
+                self.linter.commit(record, result.action)
+            results.append(result)
 
         return results
 
@@ -225,6 +242,7 @@ class Actuator:
                 "dry_run": result.dry_run,
                 "reference": result.reference,
                 "error": result.error,
+                "rule": result.rule,
                 "mode": self.client.mode,
             })
         return result
