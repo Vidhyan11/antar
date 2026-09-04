@@ -225,5 +225,123 @@ st.caption(
     "or its stopping rule manufactures the effect it stops for."
 )
 
+day4 = load("day4_results.json")
+if day4 is None:
+    st.divider()
+    st.info("Run `python scripts/run_day4.py` to add the targeting panels.")
+    st.stop()
+
+# ------------------------------------------------------- panel: targeting
+st.divider()
+st.subheader("Targeting: same data, same budget, different objective")
+
+b, an = day4["policies"]["baseline"], day4["policies"]["antar"]
+t1, t2, t3 = st.columns(3)
+t1.metric("Baseline — actually caused", f"₹{b['true_incremental_inr']:,.0f}",
+          f"claims ₹{b['gross_claimed_inr']:,.0f}", delta_color="off")
+t2.metric("ANTAR — actually caused", f"₹{an['true_incremental_inr']:,.0f}",
+          f"claims ₹{an['gross_claimed_inr']:,.0f}", delta_color="off")
+t3.metric("Incremental revenue",
+          f"{an['true_incremental_inr'] / max(b['true_incremental_inr'], 1e-9):.2f}x",
+          f"{b['contacts']:,} contacts either way", delta_color="off")
+
+st.caption(
+    f"Persuadables reached: **{b['persuadable_share']:.1%}** → **{an['persuadable_share']:.1%}**. "
+    f"Contacts that changed nothing: **{b['wasted_share']:.1%}** → **{an['wasted_share']:.1%}**. "
+    "The baseline reports the larger headline number and creates less money."
+)
+
+# ------------------------------------------------------------ panel: qini
+st.divider()
+st.subheader("Qini — is the ranking any good?")
+
+q = day4["qini"]
+qfig = go.Figure()
+qfig.add_trace(go.Scatter(
+    x=q["fractions"], y=q["random"], mode="lines", name="Random targeting",
+    line=dict(color=MUTED, width=2, dash="dash"),
+    hovertemplate="random: %{y:.0f}<extra></extra>",
+))
+qfig.add_trace(go.Scatter(
+    x=q["fractions"], y=q["naive"], mode="lines", name="Baseline (success rate)",
+    line=dict(color=SERIES_2, width=2),
+    hovertemplate="baseline: %{y:.0f} incremental<extra></extra>",
+))
+qfig.add_trace(go.Scatter(
+    x=q["fractions"], y=q["antar"], mode="lines", name="ANTAR (treatment effect)",
+    line=dict(color=SERIES_1, width=2),
+    hovertemplate="ANTAR: %{y:.0f} incremental<extra></extra>",
+))
+qfig.update_xaxes(tickformat=".0%")
+st.plotly_chart(
+    base_layout(qfig, 400, xtitle="Share of failures targeted",
+                ytitle="Incremental responders"),
+    use_container_width=True,
+)
+
+qa, qn = day4["model"]["qini_antar"], day4["model"]["qini_naive"]
+st.caption(
+    f"Qini coefficient — ANTAR **{qa:+.3f}**, baseline **{qn:+.3f}**. "
+    "Above the dashed line means the ranking finds uplift that random targeting "
+    "would miss; below it means the ranking is actively worse than picking at "
+    "random. Accuracy would not reveal this: a model can rank *outcomes* "
+    "perfectly and *uplift* terribly, which is exactly what the baseline does."
+)
+
+# --------------------------------------------------------- panel: sweep
+st.divider()
+st.subheader("Does this survive moving the assumption?")
+
+sw = day4["sweep"]
+sfig = go.Figure()
+sfig.add_trace(go.Scatter(
+    x=[p["mean_p0"] for p in sw], y=[p["baseline_inr"] for p in sw],
+    mode="lines+markers", name="Baseline",
+    line=dict(color=SERIES_2, width=2),
+    marker=dict(size=9, line=dict(width=2, color=SURFACE)),
+    hovertemplate="self-recovery %{x:.2f}<br>baseline ₹%{y:,.0f}<extra></extra>",
+))
+sfig.add_trace(go.Scatter(
+    x=[p["mean_p0"] for p in sw], y=[p["antar_inr"] for p in sw],
+    mode="lines+markers", name="ANTAR",
+    line=dict(color=SERIES_1, width=2),
+    marker=dict(size=9, line=dict(width=2, color=SURFACE)),
+    hovertemplate="self-recovery %{x:.2f}<br>ANTAR ₹%{y:,.0f}<extra></extra>",
+))
+st.plotly_chart(
+    base_layout(sfig, 380, xtitle="Mean self-recovery rate (assumption under test)",
+                ytitle="Revenue actually caused (INR)"),
+    use_container_width=True,
+)
+
+adv = [p["advantage"] for p in sw]
+st.caption(
+    f"ANTAR's advantage runs **{adv[0]:.2f}x → {adv[-1]:.2f}x**, rising with "
+    "self-recovery and never falling behind. Read it in two parts. The "
+    "**magnitude does not survive** — at low self-recovery the policies converge "
+    "to a tie, because when almost nobody pays unaided everything has uplift and "
+    "ranking by success rate is nearly the same ordering. The **direction does** — "
+    "the more customers pay without being asked, which is the Indian case, the "
+    "more targeting by treatment effect is worth."
+)
+
+with st.expander("Sweep table"):
+    st.dataframe(
+        [
+            {
+                "Self-recovery scale": p["scale"],
+                "Mean p0": round(p["mean_p0"], 3),
+                "Baseline (INR)": round(p["baseline_inr"]),
+                "ANTAR (INR)": round(p["antar_inr"]),
+                "Advantage": f"{p['advantage']:.2f}x",
+                "Baseline wasted": f"{p['baseline_wasted']:.1%}",
+                "ANTAR wasted": f"{p['antar_wasted']:.1%}",
+            }
+            for p in sw
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
 st.divider()
 st.caption(f"seed {cfg['seed']} · n={cfg['n']:,} failures · generated {day3['generated_at'][:19]}Z")
