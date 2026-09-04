@@ -34,5 +34,16 @@ jobs:
       - name: Test
         run: pytest -q
 
-      - name: End-to-end run is reproducible
-        run: python scripts/run_day1.py
+      - name: End-to-end run is reproducible, with no API keys
+        run: |
+          python scripts/run_day1.py
+          python scripts/run_day2.py
+          python scripts/run_day3.py
+          python scripts/run_day5.py
+          python scripts/run_day6.py
+
+      - name: Report regenerates from artifacts
+        run: |
+          python scripts/run_day4.py
+          python scripts/build_report.py
+          git diff --exit-code RESULTS.md

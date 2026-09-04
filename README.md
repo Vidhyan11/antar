@@ -101,6 +101,7 @@ cost without value.
 | `scripts/run_day4.py` | Uplift model, Qini, and the sensitivity sweep |
 | `scripts/run_day5.py` | Triage, the incident freeze, and Razorpay actions |
 | `scripts/run_day6.py` | Compliance, stopping rules, and the P&L |
+| `scripts/build_report.py` | Regenerates `RESULTS.md` from the artifacts |
 | `tests/` | Invariants, including property-based tests |
 
 ## Why a simulator
@@ -125,7 +126,7 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 | 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ✅ |
 | 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ✅ |
 | 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ✅ |
-| 7 | Sat 5 Sep | Console polish · pitch video · architecture doc · submission | ⬜ |
+| 7 | Sat 5 Sep | Console polish · pitch video · architecture doc · submission | ✅ |
 
 The console is a **Streamlit** app built one panel per evening, never as a
 final-day task. The forensic beats — ledger tamper detection, stopping rules
@@ -183,4 +184,25 @@ always-valid CI of [-1,493,042, 2,071,319], which is enormous and honest:
 per-transaction net value runs from a few rupees of margin to minus a whole customer
 lifetime. The defensible claim is the ordering and the efficiency, not the rupee figure.
 
-See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.
+## Documents
+
+| File | What it is |
+|---|---|
+| [`RESULTS.md`](RESULTS.md) | **Every measured number**, generated from the pipeline's own artifacts — readable without running anything |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | How it is built, where the AI is and is not, and the known limitations |
+| [`VIDEO.md`](VIDEO.md) | Pitch-video shot list and narration |
+| [`ANTAR-proposal.md`](ANTAR-proposal.md) | The full design and the strategic reasoning behind it |
+
+## Reproducing this
+
+```bash
+pip install -e ".[dev]"
+python scripts/run_day1.py     # …through run_day6.py
+python scripts/build_report.py # regenerates RESULTS.md
+streamlit run console/app.py
+pytest -q                      # 143 tests
+```
+
+**No API keys and no network required.** Model calls replay from committed
+fixtures; the Razorpay client refuses non-test credentials and records dry-run
+requests otherwise.
