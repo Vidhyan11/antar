@@ -42,6 +42,7 @@ include = ["antar*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = ["slow: simulation-based statistical validation (seconds, not milliseconds)"]
 
 [tool.ruff]
 line-length = 110

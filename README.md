@@ -34,8 +34,12 @@ genuinely need help.
 
 ```bash
 pip install -e ".[dev]"
-python scripts/run_day1.py
+python scripts/run_day1.py     # simulator + ledger
+python scripts/run_day2.py     # baseline bot: claimed vs caused
+python scripts/run_day3.py     # holdout, ATE, peeking demo
 pytest -q
+
+streamlit run console/app.py   # the console reads what the scripts write
 ```
 
 Everything is seeded from `config/antar.yaml`, so runs are byte-for-byte
@@ -72,9 +76,14 @@ cost without value.
 | `antar/evaluation.py` | The truth book — the only object allowed to hold ground truth |
 | `antar/features.py` | Shared feature construction (baseline and uplift model) |
 | `antar/policies/baseline.py` | The naive recovery bot — our control condition |
+| `antar/holdout.py` | Keyed-hash arm assignment: random, deterministic, auditable |
+| `antar/stats/sequential.py` | Always-valid confidence sequences (normal-mixture boundary) |
+| `antar/stats/validation.py` | Coverage and peeking simulations that test the guarantee |
+| `console/app.py` | Streamlit console — a viewer over the pipeline's artifacts |
 | `config/antar.yaml` | Every assumption, in one auditable place |
 | `scripts/run_day1.py` | End-to-end day-1 demo |
 | `scripts/run_day2.py` | Baseline bot: what it claims vs what it caused |
+| `scripts/run_day3.py` | Holdout, ATE, and the peeking demonstration |
 | `tests/` | Invariants, including property-based tests |
 
 ## Why a simulator
@@ -95,7 +104,7 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 |---|---|---|---|
 | 1 | Sun 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
 | 2 | Mon 31 Aug | Sensorium · naive baseline bot | ✅ |
-| 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ⬜ |
+| 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ✅ |
 | 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ⬜ |
 | 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ⬜ |
 | 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ⬜ |
