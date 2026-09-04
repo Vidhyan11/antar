@@ -16,7 +16,9 @@ The damage isn't just a wrong dashboard. Optimising for *"did payment succeed af
 
 Antar makes the incremental rupee the objective function, live and per transaction. It runs a permanent randomised holdout, estimates who is actually persuadable, screens for portfolio-wide incidents *before* contacting anyone, executes real recovery actions against Razorpay test-mode APIs, and publishes a counterfactual P&L that subtracts self-recovery, channel cost, discounts, **and the retention damage it caused**.
 
-Headline demo: on identical data, a conventional dunning bot reports **~53% more recovery than it caused**, at **4x the contact volume**. Antar shows the gap — from its own control arm.
+Headline demo: on identical data, a competently-built conventional dunning bot spends **65% of its contact budget on transient rail failures** — the cohort with the highest success rate and near-zero causal effect — and **74% of everyone it contacts was going to pay anyway**. Antar shows the gap, from its own control arm.
+
+> **Do not overclaim the ratio.** Our measured gross-vs-incremental gap on the baseline's chosen cohort is large (see `scripts/run_day2.py`), but that is a *different and larger* quantity than the 30–60% Yuno documents, which is last-touch attribution overstating one mechanism inside a multi-mechanism stack. The two agree qualitatively. Quote each for what it is, and let the sensitivity sweep carry the magnitude.
 
 ---
 
@@ -242,7 +244,7 @@ RECOVERY P&L — Merchant #4412 — batch of 5,000 failed payments
                                 95% always-valid CI  +/- INR 46,000
 
   Contacts sent: 1,140 of 4,500 eligible (75% deliberately not contacted)
-  Naive tool's overstatement: 53%  (published range 30–60%, Yuno)
+  Illustrative shape only -- final figures come from the measured run.
 
   * treated-vs-control delta in 30-day opt-out and repeat-purchase rate,
     priced at merchant ARPU. The agent is charged for annoying people.
@@ -455,7 +457,7 @@ Worth a short README section, because omissions are judgment:
 | Time      | Beat                                                                                                                                                                          |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0:00–0:30 | "Recovery tools report a number they can't defend." Show the naive bot's dashboard: **INR 12.4L recovered, 76% success rate.** Let it look great.                              |
-| 0:30–1:00 | Reveal the control arm. Real incremental: INR 8.1L. Cite the published 30–60% overstatement so it isn't just your claim.                                                       |
+| 0:30–1:00 | Reveal the control arm. Show gross vs incremental on the baseline's own cohort. Cite Yuno's 30–60% as evidence the *problem* is documented — not as validation of your ratio, which measures something different and larger.                                                       |
 | 1:00–1:45 | The A–F table. **Highest success rate = lowest uplift.** This is the intellectual core; spend the time here.                                                                   |
 | 1:45–2:45 | Live: inject an issuer outage. Baseline fires 4,000 messages. Antar opens an incident, **freezes the cohort**, schedules a re-route sweep, writes the incident note. Silence as a feature. |
 | 2:45–3:30 | Uplift targeting: 1,140 contacts instead of 4,500, higher net value. Qini curve. Ground-truth recovery. **Sensitivity sweep — the ranking holds.**                             |

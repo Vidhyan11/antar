@@ -68,8 +68,13 @@ cost without value.
 | `antar/ledger.py` | Append-only hash-chained decision ledger + verifier |
 | `antar/models.py` | Domain objects, including both potential outcomes |
 | `antar/simulator/engine.py` | The simulator that manufactures ground truth |
+| `antar/sensorium.py` | Normalises raw gateway failures into FailureRecords |
+| `antar/evaluation.py` | The truth book — the only object allowed to hold ground truth |
+| `antar/features.py` | Shared feature construction (baseline and uplift model) |
+| `antar/policies/baseline.py` | The naive recovery bot — our control condition |
 | `config/antar.yaml` | Every assumption, in one auditable place |
 | `scripts/run_day1.py` | End-to-end day-1 demo |
+| `scripts/run_day2.py` | Baseline bot: what it claims vs what it caused |
 | `tests/` | Invariants, including property-based tests |
 
 ## Why a simulator
@@ -89,7 +94,7 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 | Day | Date | Deliverable | |
 |---|---|---|---|
 | 1 | Sun 30 Aug | Ground-truth simulator · hash-chained ledger · CI | ✅ |
-| 2 | Mon 31 Aug | Sensorium · naive baseline bot | ⬜ |
+| 2 | Mon 31 Aug | Sensorium · naive baseline bot | ✅ |
 | 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ⬜ |
 | 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ⬜ |
 | 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ⬜ |

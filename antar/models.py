@@ -57,6 +57,25 @@ class Customer:
         }
 
 
+@dataclass(frozen=True)
+class RawGatewayEvent:
+    """Exactly what a payment gateway hands you when a charge fails.
+
+    No decline class, no customer features, no outcome -- those are derived or
+    looked up downstream. Day 5 maps real Razorpay `payment.failed` webhooks
+    onto this same shape, so nothing downstream changes when the events stop
+    being simulated.
+    """
+
+    txn_id: str
+    customer_id: str
+    ts: str            # ISO-8601, as it arrives over the wire
+    amount_paise: int
+    issuer: str
+    method: str
+    reason_code: str
+
+
 @dataclass
 class Outage:
     issuer: str
@@ -116,6 +135,24 @@ class FailureEvent:
         row["true_uplift"] = self.true_uplift
         row["stratum"] = self.stratum
         return row
+
+    def to_raw_event(self) -> RawGatewayEvent:
+        """Strip to what a gateway would actually deliver.
+
+        This is the airlock. Everything downstream of here -- Sensorium, the
+        baseline bot, the allocator, the actuator -- consumes RawGatewayEvent
+        and never touches a FailureEvent, so no policy can accidentally read
+        the answer it is supposed to be estimating.
+        """
+        return RawGatewayEvent(
+            txn_id=self.txn_id,
+            customer_id=self.customer_id,
+            ts=self.ts.isoformat(),
+            amount_paise=self.amount_paise,
+            issuer=self.issuer,
+            method=self.method,
+            reason_code=self.reason_code,
+        )
 
     def to_ledger_payload(self) -> dict[str, Any]:
         """What the Sensorium is allowed to write down.
