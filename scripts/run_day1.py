@@ -56,8 +56,7 @@ def main() -> int:
             "config_path": cfg._source_path,
             "window_days": cfg.window.days,
         })
-        for ev in result.events:
-            ledger.append("failure_observed", ev.to_ledger_payload())
+        ledger.append_many("failure_observed", (ev.to_ledger_payload() for ev in result.events))
         ledger.append("run_completed", {"failures_recorded": len(result.events)})
 
         print(f"entries written : {len(ledger):,}")

@@ -38,31 +38,34 @@ python scripts/run_day1.py     # simulator + ledger
 python scripts/run_day2.py     # baseline bot: claimed vs caused
 python scripts/run_day3.py     # holdout, ATE, peeking demo
 python scripts/run_day4.py     # uplift model, Qini, sensitivity sweep
+python scripts/run_day5.py     # triage, incident freeze, actions
 pytest -q
 
 streamlit run console/app.py   # the console reads what the scripts write
 ```
 
 Everything is seeded from `config/antar.yaml`, so runs are byte-for-byte
-reproducible and the demo needs no API keys.
+reproducible **and the demo needs no API keys**. Model calls resolve from
+committed fixtures, and the Razorpay client runs in recorded dry-run mode
+unless `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` test-mode credentials are set.
 
 ## What day 1 produces
 
 ```
 class                     n   share      p0      p1   uplift  rank p1  rank up
-D_DEAD_INSTRUMENT       774   7.6%    0.01    0.32    0.308        4        1  <- most valuable
-C_FUNDS               1,686  16.6%    0.12    0.38    0.254        3        2
-F_INTENT_LOSS         1,023  10.1%    0.10    0.28    0.182        5        3
-B_AUTH_DROPOFF        1,787  17.6%    0.56    0.73    0.173        2        4
-E_RISK_DECLINE          624   6.2%    0.09    0.21    0.117        6        5
-A_TRANSIENT_RAIL      4,233  41.8%    0.92    0.93    0.013        1        6  <- best rate, no value
+D_DEAD_INSTRUMENT     3,245   8.0%    0.01    0.31    0.301        4        1  <- most valuable
+C_FUNDS               6,570  16.1%    0.12    0.38    0.256        3        2
+F_INTENT_LOSS         3,925   9.6%    0.10    0.28    0.183        5        3
+B_AUTH_DROPOFF        7,139  17.5%    0.56    0.74    0.175        2        4
+E_RISK_DECLINE        2,477   6.1%    0.09    0.21    0.119        6        5
+A_TRANSIENT_RAIL     17,351  42.6%    0.92    0.93    0.013        1        6  <- best rate, no value
 ```
 
 `p0` = recovers with no intervention · `p1` = recovers if we act · `uplift` = the
 difference, which is the only column that is actually money.
 
 Rank correlation between treated success rate and true uplift: **−0.26**. And
-only **12.6%** of failures are *persuadable* — for the other 87%, contacting is
+only about **12%** of failures are *persuadable* — for the rest, contacting is
 cost without value.
 
 ## Repository layout
@@ -83,12 +86,17 @@ cost without value.
 | `antar/pipeline.py` | One experiment end to end — shared by every day and the sweep |
 | `antar/policies/uplift.py` | T-learner CATE targeting, and the Qini curve |
 | `antar/sweep.py` | Sensitivity analysis over the self-recovery assumption |
+| `antar/triage/detector.py` | Seasonality-aware Poisson detection of rail incidents |
+| `antar/triage/agent.py` | The triage agent, verdict validation, and the freeze registry |
+| `antar/llm/provider.py` | Fixture-first model layer — runs with no API key |
+| `antar/actuator.py` | Bounded, gated, logged actions against Razorpay test mode |
 | `console/app.py` | Streamlit console — a viewer over the pipeline's artifacts |
 | `config/antar.yaml` | Every assumption, in one auditable place |
 | `scripts/run_day1.py` | End-to-end day-1 demo |
 | `scripts/run_day2.py` | Baseline bot: what it claims vs what it caused |
 | `scripts/run_day3.py` | Holdout, ATE, and the peeking demonstration |
 | `scripts/run_day4.py` | Uplift model, Qini, and the sensitivity sweep |
+| `scripts/run_day5.py` | Triage, the incident freeze, and Razorpay actions |
 | `tests/` | Invariants, including property-based tests |
 
 ## Why a simulator
@@ -111,7 +119,7 @@ magnitude doesn't. Payment plumbing runs against Razorpay **test-mode** APIs.
 | 2 | Mon 31 Aug | Sensorium · naive baseline bot | ✅ |
 | 3 | Tue 1 Sep | Holdout assignment · ATE with always-valid confidence sequences · *console: holdout + ATE panel* | ✅ |
 | 4 | Wed 2 Sep | Uplift/CATE model · Qini · sensitivity sweep · *console: Qini + sweep panel* | ✅ |
-| 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ⬜ |
+| 5 | Thu 3 Sep | Triage agent · incident freeze · Razorpay test-mode actions · *console: incident timeline* | ✅ |
 | 6 | Fri 4 Sep | Actuator · stopping rules · compliance linter · Counterfactual P&L · *console: P&L panel* | ⬜ |
 | 7 | Sat 5 Sep | Console polish · pitch video · architecture doc · submission | ⬜ |
 
@@ -120,5 +128,25 @@ final-day task. The forensic beats — ledger tamper detection, stopping rules
 firing — stay in the terminal, where they read as evidence rather than
 decoration. The pipeline also emits a self-contained `report.html` so the P&L
 and charts are visible without running anything.
+
+## What day 5 produces
+
+```
+rail outages                6 (6 above the detection floor)
+detected                    5 of 6 detectable, 6 episodes, no false positives
+
+transactions inside an open incident        331
+baseline would contact, inside the incident   32
+ANTAR contacts, inside the incident            0
+```
+
+Those messages would tell customers their payment failed during a window when
+the bank was down and nothing they could do would have helped. **Staying silent
+is the correct action, and no success-rate metric will ever reward it.**
+
+Detection is a large-numbers problem, so recall is reported against outages that
+were reachable at all. A rail carrying almost no traffic cannot have an outage
+detected by any method, and scoring against those would be marking our own
+homework generously.
 
 See [`ANTAR-proposal.md`](ANTAR-proposal.md) for the full design.

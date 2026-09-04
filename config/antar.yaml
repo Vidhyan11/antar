@@ -22,7 +22,12 @@ population:
 
 window:
   days: 30
-  attempts_per_day: 2400
+  # Rail-level incident detection is a large-numbers problem: a bank outage is
+  # only visible if that rail carries enough traffic for a quiet bucket to have
+  # a stable count. At 2400/day spread over 24 issuer x method cells the busiest
+  # rail saw ~3 failures per 15-minute bucket during a full outage, which no
+  # detector can honestly separate from noise. This is the realistic regime.
+  attempts_per_day: 9600
   base_failure_rate: 0.14
 
 rails:

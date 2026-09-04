@@ -343,5 +343,86 @@ with st.expander("Sweep table"):
         hide_index=True,
     )
 
+day5 = load("day5_results.json")
+if day5 is not None:
+    det, frz, acts = day5["detector"], day5["freeze"], day5["actions"]
+
+    st.divider()
+    st.subheader("Incidents: what each system does during an outage")
+
+    i1, i2, i3 = st.columns(3)
+    i1.metric("Rail outages detected",
+              f"{det['detected_of_detectable']} of {det['detectable']}",
+              "above the detection floor", delta_color="off")
+    i2.metric("Baseline would message", f"{frz['baseline_would_contact_inside_incident']:,}",
+              "customers inside an outage", delta_color="inverse")
+    i3.metric("ANTAR messages", f"{frz['antar_contacts_inside_incident']:,}",
+              f"{frz['frozen_transactions']:,} transactions frozen", delta_color="off")
+
+    st.caption(
+        "Those messages would tell customers their payment failed during a window "
+        "when the bank was down and nothing they could do would have helped. "
+        "**Staying silent is the correct action, and no success-rate metric will "
+        "ever reward it.**"
+    )
+
+    # Detection recall against the floor. A rail carrying almost no traffic
+    # cannot have an outage detected by any method, so the chart says which
+    # outages were reachable at all rather than scoring against all of them.
+    rows = det["outages"]
+    labels = [f"{o['issuer']} {o['method']}" for o in rows]
+    dfig = go.Figure()
+    dfig.add_vline(x=8, line_width=2, line_dash="dash", line_color=MUTED,
+                   annotation_text="detection floor", annotation_position="top",
+                   annotation_font_color=TEXT_SECONDARY)
+    for found, colour, name in ((True, SERIES_1, "Detected"), (False, SERIES_2, "Missed")):
+        subset = [(lbl, o) for lbl, o in zip(labels, rows, strict=True) if o["detected"] is found]
+        if not subset:
+            continue
+        dfig.add_trace(go.Scatter(
+            x=[o["expected_peak_bucket_failures"] for _, o in subset],
+            y=[lbl for lbl, _ in subset],
+            mode="markers", name=name,
+            marker=dict(size=13, color=colour, line=dict(width=2, color=SURFACE)),
+            hovertemplate="<b>%{y}</b><br>expected peak-hour failures %{x:.1f}<extra></extra>",
+        ))
+    st.plotly_chart(
+        base_layout(dfig, 320, xtitle="Expected failures in the peak hour of the outage"),
+        use_container_width=True,
+    )
+
+    st.caption(
+        "Detection is a large-numbers problem. A rail only becomes observable once "
+        "an hour holds enough traffic for its quiet count to be stable — which is "
+        "why the honest denominator is outages above the floor, not all outages."
+    )
+
+    for inc in day5["incidents"]:
+        state = "FROZEN" if inc["frozen"] else "released"
+        with st.expander(
+            f"{inc['issuer']} {inc['method']} · {inc['start'][11:16]}–{inc['end'][11:16]} · "
+            f"{inc['observed']} failures vs {inc['expected']:.1f} expected · {state}"
+        ):
+            st.write(f"**Hypothesis** — {inc['hypothesis']}")
+            st.write(f"**Note** — {inc['note']}")
+            st.caption(
+                f"class-A share {inc['class_a_share']:.0%} · confidence {inc['confidence']:.2f} · "
+                f"action `{inc['recommended_action']}` · verdict from **{inc['verdict_source']}** · "
+                f"{inc['affected_transactions']} transactions"
+            )
+
+    st.markdown(
+        f"**Actions issued:** {acts['total']:,} · mode `{acts['mode']}` · "
+        f"{acts['executed_live']:,} confirmed by API · {acts['blocked']:,} blocked by the freeze "
+        f"· {acts['escalated']:,} escalated to a human"
+    )
+    st.caption(
+        "Every action is allow-listed per decline class, capped in rupees, and written "
+        "to the ledger *before* the network call — so a call that fails halfway still "
+        "leaves a trace. Verdict source is shown above because a demo silently running "
+        "on rule-based fallback while presenting itself as agentic would be its own "
+        "kind of dishonesty."
+    )
+
 st.divider()
 st.caption(f"seed {cfg['seed']} · n={cfg['n']:,} failures · generated {day3['generated_at'][:19]}Z")

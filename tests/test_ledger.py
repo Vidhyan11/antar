@@ -174,3 +174,45 @@ def test_persistence_across_reopen(tmp_path):
         assert led.verify().ok
         led.append("y", {"v": 2})
         assert led.verify().ok
+
+
+# --------------------------------------------------- batch equivalence
+
+def test_append_many_produces_an_identical_chain(tmp_path):
+    """The fast path must be the same chain, not a different one.
+
+    Batching exists only to avoid an fsync per row; if it ever produced
+    different hashes, verification would silently mean something else.
+    """
+    from datetime import datetime, timezone
+
+    moment = datetime(2026, 9, 1, 12, 0, tzinfo=timezone.utc)
+    payloads = [{"i": i, "txn": f"pay_{i}"} for i in range(50)]
+
+    with Ledger(tmp_path / "one.db", fresh=True) as a:
+        for p in payloads:
+            a.append("failure_observed", p, ts=moment)
+        sequential = [e.entry_hash for e in a.entries()]
+
+    with Ledger(tmp_path / "two.db", fresh=True) as b:
+        assert b.append_many("failure_observed", payloads, ts=moment) == 50
+        batched = [e.entry_hash for e in b.entries()]
+        assert b.verify().ok
+
+    assert sequential == batched
+
+
+def test_append_many_continues_an_existing_chain(tmp_path):
+    with Ledger(tmp_path / "c.db", fresh=True) as led:
+        led.append("start", {"n": 0})
+        led.append_many("bulk", [{"n": i} for i in range(1, 4)])
+        assert len(led) == 4
+        assert [e.seq for e in led.entries()] == [1, 2, 3, 4]
+        assert led.verify().ok
+
+
+def test_append_many_with_no_payloads_is_a_noop(tmp_path):
+    with Ledger(tmp_path / "d.db", fresh=True) as led:
+        assert led.append_many("bulk", []) == 0
+        assert len(led) == 0
+        assert led.verify().ok

@@ -50,13 +50,28 @@ class Assignment:
     salt: str
     holdout_fraction: float
 
-    @property
-    def treatment(self) -> set[str]:
-        return {t for t, a in self.arms.items() if a is Arm.TREATMENT}
+    def __post_init__(self) -> None:
+        # Materialise the arm sets once.
+        #
+        # These were properties that rebuilt the set on every access, which made
+        # the idiomatic `[t in assignment.treatment for t in ids]` quietly
+        # quadratic -- 800 million operations on a 40k book, and a two-minute
+        # model fit whose actual fits took 0.02 seconds. Building them here
+        # removes the footgun rather than asking every call site to remember.
+        object.__setattr__(
+            self, "_treatment", frozenset(t for t, a in self.arms.items() if a is Arm.TREATMENT)
+        )
+        object.__setattr__(
+            self, "_control", frozenset(t for t, a in self.arms.items() if a is Arm.CONTROL)
+        )
 
     @property
-    def control(self) -> set[str]:
-        return {t for t, a in self.arms.items() if a is Arm.CONTROL}
+    def treatment(self) -> frozenset[str]:
+        return self._treatment  # type: ignore[attr-defined]
+
+    @property
+    def control(self) -> frozenset[str]:
+        return self._control  # type: ignore[attr-defined]
 
     @property
     def realised_holdout(self) -> float:

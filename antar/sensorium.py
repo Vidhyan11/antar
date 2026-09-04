@@ -107,4 +107,17 @@ class Sensorium:
         return record
 
     def observe_many(self, raws: Iterable[RawGatewayEvent]) -> list[FailureRecord]:
-        return [self.observe(raw) for raw in raws]
+        """Normalise a batch, writing the ledger in one commit rather than N.
+
+        The chain is identical either way; this just avoids an fsync per
+        failure, which at portfolio volume is the difference between a demo
+        that runs in a second and one that runs in a minute.
+        """
+        ledger, self.ledger = self.ledger, None
+        try:
+            records = [self.observe(raw) for raw in raws]
+        finally:
+            self.ledger = ledger
+        if ledger is not None:
+            ledger.append_many("failure_observed", (r.to_payload() for r in records))
+        return records

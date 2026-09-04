@@ -20,7 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -147,6 +147,45 @@ class Ledger:
         )
         self._conn.commit()
         return LedgerEntry(seq, ts_iso, kind, payload, prev_hash, entry_hash)
+
+    def append_many(
+        self, kind: str, payloads: Iterable[dict[str, Any]], *, ts: datetime | None = None
+    ) -> int:
+        """Append a batch under a single commit.
+
+        Identical chain, identical hashes -- each entry still commits to its
+        predecessor, computed sequentially here rather than round-tripping to
+        SQLite per row. Ingesting forty thousand failures went from over a
+        minute of fsyncs to under a second, which is the difference between CI
+        that runs and CI that gets switched off.
+        """
+        if not kind:
+            raise ValueError("kind must be a non-empty string")
+
+        moment = (ts or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        ts_iso = moment.isoformat()
+
+        cur = self._conn.execute("SELECT seq, entry_hash FROM ledger ORDER BY seq DESC LIMIT 1")
+        row = cur.fetchone()
+        seq = 1 if row is None else row["seq"] + 1
+        prev_hash = GENESIS_HASH if row is None else row["entry_hash"]
+
+        rows = []
+        for payload in payloads:
+            payload_json = canonical_json(payload)
+            entry_hash = compute_hash(prev_hash, seq, ts_iso, kind, payload_json)
+            rows.append((seq, ts_iso, kind, payload_json, prev_hash, entry_hash))
+            prev_hash = entry_hash
+            seq += 1
+
+        if rows:
+            self._conn.executemany(
+                "INSERT INTO ledger (seq, ts, kind, payload, prev_hash, entry_hash)"
+                " VALUES (?,?,?,?,?,?)",
+                rows,
+            )
+            self._conn.commit()
+        return len(rows)
 
     # -- reading ---------------------------------------------------------
 

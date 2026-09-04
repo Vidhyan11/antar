@@ -40,6 +40,15 @@ def test_a_tampered_assignment_fails_verification():
     assert not a.verify()
 
 
+def test_arm_sets_are_materialised_once():
+    """Guards the quadratic footgun: rebuilding the set per access turned an
+    idiomatic membership loop into 800 million operations."""
+    ids = [f"pay_{i:06d}" for i in range(100)]
+    a = assign(ids, "salt", 0.1)
+    assert a.treatment is a.treatment
+    assert isinstance(a.treatment, frozenset)
+
+
 @given(fraction=st.floats(min_value=0.02, max_value=0.5))
 @settings(max_examples=25, deadline=None)
 def test_realised_share_tracks_the_nominal_rate(fraction):

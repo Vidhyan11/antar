@@ -52,7 +52,11 @@ def compute() -> dict[str, Any]:
 
     cate_hat = model.predict_cate(evaluate)
     true_uplift = np.array([data.truth[t].uplift for t in eval_ids])
-    naive_scores = np.array([naive.score(evaluate)[t] for t in eval_ids])
+    # Score once. Calling score() inside the comprehension rebuilt the whole
+    # feature frame per transaction -- accidentally quadratic, and it turned a
+    # few seconds into minutes.
+    naive_by_id = naive.score(evaluate)
+    naive_scores = np.array([naive_by_id[t] for t in eval_ids])
 
     q_antar = qini_curve(cate_hat, eval_y, eval_t)
     q_naive = qini_curve(naive_scores, eval_y, eval_t)
