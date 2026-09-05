@@ -3,60 +3,63 @@
 <title>ANTAR</title>
 <style>
   /* Opening and closing frames for the pitch video.
-     Open in a browser and press F11 for fullscreen. Colours match the console,
-     so cutting between this and the dashboard does not look like two projects. */
-  :root { color-scheme: dark; }
+     Open in a browser and press F11 for fullscreen; scroll between sections.
+
+     Light, to match the console. These frames cut directly against the
+     dashboard, and a dark card against a white dashboard reads as two separate
+     projects. Colours are the same validated light palette the charts use:
+     #2a78d6 accent, near-black text on white. */
+  :root { color-scheme: light; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #1a1a19;
-    color: #ffffff;
+    background: #ffffff;
+    color: #0b0b0b;
     font: 400 16px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+  html { scroll-snap-type: y mandatory; }
   section {
     height: 100vh;
     display: flex; flex-direction: column; justify-content: center;
     padding: 0 9vw;
     scroll-snap-align: start;
   }
-  html { scroll-snap-type: y mandatory; }
 
   .eyebrow {
     font-size: clamp(13px, 1.1vw, 18px);
     letter-spacing: .18em; text-transform: uppercase;
-    color: #7a7973; margin-bottom: 3vh;
+    color: #6b6a65; margin-bottom: 3vh;
   }
   h1 {
     font-size: clamp(56px, 9vw, 150px);
     font-weight: 600; letter-spacing: -.03em; line-height: .95;
   }
-  h1 .deva { color: #7a7973; font-weight: 400; }
+  h1 .deva { color: #6b6a65; font-weight: 400; }
   .tagline {
     font-size: clamp(20px, 2.4vw, 40px);
-    color: #3987e5; margin-top: 2.5vh; font-weight: 500;
+    color: #2a78d6; margin-top: 2.5vh; font-weight: 600;
   }
   .lede {
     font-size: clamp(17px, 1.6vw, 27px);
-    color: #c3c2b7; margin-top: 5vh; max-width: 24em; line-height: 1.45;
+    color: #3d3d3a; margin-top: 5vh; max-width: 24em; line-height: 1.45;
   }
-  .lede b { color: #ffffff; font-weight: 600; }
+  .lede b { color: #0b0b0b; font-weight: 600; }
   .foot {
     margin-top: 7vh; font-size: clamp(13px, 1.1vw, 18px);
-    color: #7a7973; letter-spacing: .04em;
+    color: #6b6a65; letter-spacing: .04em;
   }
-  .rule { width: 88px; height: 3px; background: #3987e5; margin: 4vh 0; }
+  .rule { width: 88px; height: 3px; background: #2a78d6; margin: 4vh 0; }
   code {
     font-family: "Cascadia Mono", Consolas, monospace;
-    color: #ffffff; background: #26262400; font-size: .95em;
+    color: #0b0b0b; font-size: .95em;
   }
   .stat { display: flex; gap: 5vw; margin-top: 6vh; flex-wrap: wrap; }
-  .stat div { }
   .stat .n {
     font-size: clamp(30px, 4vw, 64px); font-weight: 600;
-    letter-spacing: -.02em; color: #3987e5;
+    letter-spacing: -.02em; color: #2a78d6;
   }
   .stat .l {
-    font-size: clamp(12px, 1vw, 16px); color: #7a7973;
+    font-size: clamp(12px, 1vw, 16px); color: #6b6a65;
     letter-spacing: .1em; text-transform: uppercase; margin-top: .6vh;
   }
 </style>
