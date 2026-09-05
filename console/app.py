@@ -78,7 +78,7 @@ def load(name: str) -> dict | None:
 
 
 # ---------------------------------------------------------------- header
-st.title("ANTAR — अंतर")
+st.title("ANTAR")
 st.caption("Only the difference counts. · Track 03 — AI Revenue Recovery")
 
 day3 = load("day3_results.json")
