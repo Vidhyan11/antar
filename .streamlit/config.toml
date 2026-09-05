@@ -1,0 +1,15 @@
+# Pin the app to a light theme.
+#
+# Without this, `theme.base` reports None and Streamlit follows the viewer's
+# system preference, so the same code renders differently on different machines
+# -- which made charts unreadable while recording. A demo has to look the same
+# every time it is opened.
+[theme]
+base = "light"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f4f1"
+textColor = "#0b0b0b"
+primaryColor = "#2a78d6"
+
+[server]
+headless = true

@@ -24,17 +24,28 @@ DATA = ROOT / "data"
 st.set_page_config(page_title="ANTAR", page_icon=":bar_chart:", layout="wide")
 
 # -- theme tokens -----------------------------------------------------------
-# Both modes are selected, not flipped: the dark column is the same two hues
-# re-stepped for the dark surface. Validated with the palette checker.
-_DARK = st.get_option("theme.base") == "dark"
+#
+# Committed to a single light look rather than detecting the viewer's theme.
+# `st.get_option("theme.base")` returns None unless it is configured, so the
+# earlier detection silently picked light tokens while Streamlit followed the
+# system preference -- and charts came out unreadable on a dark machine. A demo
+# has to look identical wherever it is opened, so the palette is pinned here and
+# the app theme is pinned in .streamlit/config.toml to match.
+#
+# These are the light-mode values from the validated palette: worst adjacent
+# CVD delta-E 24.7, normal-vision 33.6, both series >= 3:1 against the surface.
+SURFACE = "#ffffff"
+TEXT_PRIMARY = "#0b0b0b"        # near-black: axis titles, value labels
+TEXT_SECONDARY = "#3d3d3a"      # tick labels and legends
+GRID = "#e6e5e1"
+SERIES_1 = "#2a78d6"            # estimate
+SERIES_2 = "#eb6834"            # ground truth
+MUTED = "#6b6a65"               # reference lines and connectors
 
-SURFACE = "#1a1a19" if _DARK else "#fcfcfb"
-TEXT_PRIMARY = "#ffffff" if _DARK else "#0b0b0b"
-TEXT_SECONDARY = "#c3c2b7" if _DARK else "#52514e"
-GRID = "#33322f" if _DARK else "#e6e5e1"
-SERIES_1 = "#3987e5" if _DARK else "#2a78d6"   # estimate
-SERIES_2 = "#d95926" if _DARK else "#eb6834"   # ground truth
-MUTED = "#7a7973" if _DARK else "#8a8983"
+# Streamlit repaints figure colours with its own template unless this is None.
+# That override was the actual cause of light text on a white chart: our
+# background survived and our text did not.
+PLOTLY_THEME = None
 
 
 def base_layout(fig: go.Figure, height: int, xtitle: str = "", ytitle: str = "") -> go.Figure:
@@ -42,15 +53,20 @@ def base_layout(fig: go.Figure, height: int, xtitle: str = "", ytitle: str = "")
         height=height,
         paper_bgcolor=SURFACE,
         plot_bgcolor=SURFACE,
-        font=dict(color=TEXT_SECONDARY, size=13),
+        font=dict(color=TEXT_PRIMARY, size=14),
         margin=dict(l=10, r=20, t=30, b=10),
-        hoverlabel=dict(bgcolor=SURFACE, font_size=13),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        hoverlabel=dict(bgcolor=SURFACE, font=dict(color=TEXT_PRIMARY, size=13)),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
+                    font=dict(color=TEXT_PRIMARY, size=13)),
         xaxis_title=xtitle,
         yaxis_title=ytitle,
     )
-    fig.update_xaxes(gridcolor=GRID, zeroline=False, linecolor=GRID)
-    fig.update_yaxes(gridcolor=GRID, zeroline=False, linecolor=GRID)
+    for axis in (fig.update_xaxes, fig.update_yaxes):
+        axis(
+            gridcolor=GRID, zeroline=False, linecolor=GRID,
+            tickfont=dict(color=TEXT_PRIMARY, size=13),
+            title_font=dict(color=TEXT_PRIMARY, size=14),
+        )
     return fig
 
 
@@ -149,7 +165,7 @@ fig.add_trace(go.Scatter(
 ))
 
 st.plotly_chart(base_layout(fig, 380, xtitle="Incremental recovery rate"),
-                use_container_width=True)
+                use_container_width=True, theme=PLOTLY_THEME)
 
 undetected = [r["class"] for r in day3["by_class"] if not r["detected"]]
 st.caption(
@@ -215,7 +231,7 @@ bars.add_hline(
 )
 bars.update_yaxes(tickformat=".0%", range=[0, max(rates) * 1.25 + 0.02])
 st.plotly_chart(base_layout(bars, 340, ytitle="False positive rate"),
-                use_container_width=True)
+                use_container_width=True, theme=PLOTLY_THEME)
 
 st.caption(
     f"{p['n_experiments']} experiments where the true effect is **exactly zero**, "
@@ -276,7 +292,7 @@ qfig.update_xaxes(tickformat=".0%")
 st.plotly_chart(
     base_layout(qfig, 400, xtitle="Share of failures targeted",
                 ytitle="Incremental responders"),
-    use_container_width=True,
+    use_container_width=True, theme=PLOTLY_THEME,
 )
 
 qa, qn = day4["model"]["qini_antar"], day4["model"]["qini_naive"]
@@ -311,7 +327,7 @@ sfig.add_trace(go.Scatter(
 st.plotly_chart(
     base_layout(sfig, 380, xtitle="Mean self-recovery rate (assumption under test)",
                 ytitle="Revenue actually caused (INR)"),
-    use_container_width=True,
+    use_container_width=True, theme=PLOTLY_THEME,
 )
 
 adv = [p["advantage"] for p in sw]
@@ -388,7 +404,7 @@ if day5 is not None:
         ))
     st.plotly_chart(
         base_layout(dfig, 320, xtitle="Expected failures in the peak hour of the outage"),
-        use_container_width=True,
+        use_container_width=True, theme=PLOTLY_THEME,
     )
 
     st.caption(
@@ -456,7 +472,8 @@ if day6 is not None:
         totals=dict(marker=dict(color=MUTED)),
         hovertemplate="%{x}<br>₹%{y:,.0f}<extra></extra>",
     ))
-    st.plotly_chart(base_layout(wf, 420, ytitle="INR"), use_container_width=True)
+    st.plotly_chart(base_layout(wf, 420, ytitle="INR"),
+                use_container_width=True, theme=PLOTLY_THEME)
 
     st.caption(
         f"**Retention damage of ₹{a['retention_damage']:,.0f}** comes from a measured "
