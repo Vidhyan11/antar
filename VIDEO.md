@@ -1,7 +1,13 @@
 # Pitch video — shot list and narration
 
-Five minutes is **about 700 spoken words**. This script is 690. Read it at a
+Five minutes is **about 700 spoken words**. This script is ~720. Read it at a
 normal pace; do not rush to fit more in.
+
+**Do not read it word for word.** Verbatim reading is audible and it flattens
+everything. Learn the beats, then say them in your own words — you built this,
+so you already know what each screen shows. The exceptions are marked **[VERBATIM]**
+below: those are precision claims where the wording is doing real work, and an
+approximation would either overclaim or lose the point.
 
 **Record the demo footage first, narrate over it second.** Trying to talk and
 drive the terminal at the same time is where takes get lost.
@@ -12,9 +18,12 @@ drive the terminal at the same time is where takes get lost.
 
 - [ ] `python scripts/run_day1.py` … `run_day6.py` — all six green
 - [ ] `python scripts/build_report.py`
-- [ ] `streamlit run console/app.py` — open, dark theme, browser zoom ~125%
+- [ ] `streamlit run console/app.py` — light theme is pinned in .streamlit/config.toml;
+      browser zoom ~125%, and Ctrl+R once so it picks the theme up
 - [ ] Terminal font large enough to read at 720p — this is the usual mistake
 - [ ] Razorpay dashboard open on the test-mode Payment Links page
+- [ ] `slides/title.html` open in a second tab, F11 fullscreen (frames 1 and 2)
+- [ ] Water. You will do more takes than you expect.
 
 ---
 
@@ -51,6 +60,8 @@ drive the terminal at the same time is where takes get lost.
 
 **Screen:** `RESULTS.md` section 2, or the console forest plot.
 
+> **[VERBATIM from here to the end of this beat]**
+>
 > "It gets worse than a wrong dashboard. Look at what the metric does to
 > targeting.
 >
@@ -73,6 +84,8 @@ drive the terminal at the same time is where takes get lost.
 **Screen:** run `python scripts/run_day5.py`, let section 3 land. Then the
 console incident panel.
 
+**Then cut to the Razorpay dashboard → Payment Links (Test Mode).**
+
 > "Second problem. When an issuer degrades, thousands of payments fail at once.
 > That is *one* incident about a bank, not thousands about customers.
 >
@@ -80,12 +93,17 @@ console incident panel.
 > simple enough that you can check it by hand. When a burst is systemic, it
 > freezes the whole cohort.
 >
-> Inside the incident window, the baseline would message thirty-two customers to
+> Inside the incident window, the baseline would message thirty-one customers to
 > tell them a payment failed during a window when the bank was down and nothing
 > they could do would have helped. ANTAR messages zero.
 >
 > Silence is the correct action here, and no success-rate metric will ever reward
-> it."
+> it.
+>
+> And these aren't simulated. Here are the payment links the agent created, in
+> Razorpay's own test dashboard. Every write carries an idempotency key — I ran
+> it twice, and the second run created nothing new. Replaying this agent cannot
+> double-charge anyone."
 
 ---
 
@@ -101,7 +119,7 @@ console incident panel.
 > On Qini, ANTAR scores plus zero-four-three. The baseline scores *minus*
 > zero-two-one — worse than random at finding incremental responders.
 >
-> And the obvious objection: our headline depends on how often customers
+> **[VERBATIM]** And the obvious objection: our headline depends on how often customers
 > self-recover, which is a number we chose. So we swept it. The multiple moves a
 > lot. The ordering does not — ANTAR is never behind, and its advantage grows as
 > self-recovery rises, which is the Indian case. We claim the direction, not the
@@ -133,6 +151,8 @@ console incident panel.
 
 **Screen:** console P&L waterfall, both columns.
 
+> **[VERBATIM to the end]**
+>
 > "So here is the statement nobody else produces. Headline claim. Minus what the
 > control group says was coming anyway. Minus channel cost, discounts — and
 > retention damage, measured from the same control arm, because contacting people
