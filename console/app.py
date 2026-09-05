@@ -54,7 +54,11 @@ def base_layout(fig: go.Figure, height: int, xtitle: str = "", ytitle: str = "")
         paper_bgcolor=SURFACE,
         plot_bgcolor=SURFACE,
         font=dict(color=TEXT_PRIMARY, size=14),
-        margin=dict(l=10, r=20, t=30, b=10),
+        # Generous margins, and automargin below so Plotly grows them further
+        # when a label needs it. The earlier l=10/b=10 could not fit tick labels
+        # and an axis title in the same strip, so the titles were clipped clean
+        # out of the frame -- present in the figure, invisible on screen.
+        margin=dict(l=70, r=30, t=40, b=70),
         hoverlabel=dict(bgcolor=SURFACE, font=dict(color=TEXT_PRIMARY, size=13)),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
                     font=dict(color=TEXT_PRIMARY, size=13)),
@@ -65,7 +69,9 @@ def base_layout(fig: go.Figure, height: int, xtitle: str = "", ytitle: str = "")
         axis(
             gridcolor=GRID, zeroline=False, linecolor=GRID,
             tickfont=dict(color=TEXT_PRIMARY, size=13),
-            title_font=dict(color=TEXT_PRIMARY, size=14),
+            title_font=dict(color=TEXT_PRIMARY, size=15),
+            title_standoff=14,
+            automargin=True,
         )
     return fig
 
@@ -226,8 +232,11 @@ bars.add_hline(
     line_dash="dash",
     line_color=MUTED,
     annotation_text=f"nominal {p['alpha']:.0%}",
-    annotation_position="right",
-    annotation_font_color=TEXT_SECONDARY,
+    # "right" places the label OUTSIDE the plot area, where the margin clipped
+    # it to "nom...". Top-right sits inside, in the empty space above the
+    # always-valid bar.
+    annotation_position="top right",
+    annotation_font=dict(color=TEXT_PRIMARY, size=13),
 )
 bars.update_yaxes(tickformat=".0%", range=[0, max(rates) * 1.25 + 0.02])
 st.plotly_chart(base_layout(bars, 340, ytitle="False positive rate"),
@@ -456,24 +465,37 @@ if day6 is not None:
     n3.metric("Contacts", f"{a['contacts']:,} vs {b['contacts']:,}",
               f"{1 - a['contacts'] / max(b['contacts'], 1):.0%} fewer", delta_color="off")
 
-    # A waterfall is the right form here: every line after the first is a
+    # A waterfall is the right form here: every step after the first is a
     # subtraction, and the whole argument is what survives them.
+    #
+    # The margin haircut gets its own labelled step. An earlier version folded
+    # it into the "Channel cost" bar, which drew a 760k drop under a label for
+    # a 578-rupee line -- the chart was telling a different story from the
+    # statement beside it.
     wf = go.Figure(go.Waterfall(
         orientation="v",
-        measure=["absolute", "relative", "total", "relative", "relative", "relative", "total"],
+        measure=["absolute", "relative", "total",
+                 "relative", "relative", "relative", "relative", "total"],
         x=["Last-touch<br>claim", "Self-recovery", "Incremental<br>recovery",
-           "Channel cost", "Discounts", "Retention<br>damage", "Net value"],
+           f"Margin haircut<br>({1 - a['margin_rate']:.0%})", "Channel cost",
+           "Discounts", "Retention<br>damage", "Net value"],
         y=[a["last_touch_claim"], -a["self_recovery"], 0,
-           -(a["last_touch_claim"] - a["self_recovery"] - a["incremental_margin"]),
-           -a["discount_cost"], -a["retention_damage"], 0],
+           -(a["incremental_recovery"] - a["incremental_margin"]),
+           -a["channel_cost"], -a["discount_cost"], -a["retention_damage"], 0],
         connector=dict(line=dict(color=MUTED, width=1)),
         increasing=dict(marker=dict(color=SERIES_1)),
         decreasing=dict(marker=dict(color=SERIES_2)),
         totals=dict(marker=dict(color=MUTED)),
-        hovertemplate="%{x}<br>₹%{y:,.0f}<extra></extra>",
+        hovertemplate="%{x}<br>INR %{y:,.0f}<extra></extra>",
     ))
     st.plotly_chart(base_layout(wf, 420, ytitle="INR"),
                 use_container_width=True, theme=PLOTLY_THEME)
+    st.caption(
+        f"Channel cost is ₹{a['channel_cost']:,.0f} — a hairline at this scale, and that "
+        f"is the point: messages are cheap, customers are not. Retention damage is "
+        f"₹{a['retention_damage']:,.0f}, roughly {a['retention_damage'] / max(a['channel_cost'], 1):,.0f}x "
+        "the cost of sending them."
+    )
 
     st.caption(
         f"**Retention damage of ₹{a['retention_damage']:,.0f}** comes from a measured "
