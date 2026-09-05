@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ANTAR</title>
+<style>
+  /* Opening and closing frames for the pitch video.
+     Open in a browser and press F11 for fullscreen. Colours match the console,
+     so cutting between this and the dashboard does not look like two projects. */
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a19;
+    color: #ffffff;
+    font: 400 16px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  section {
+    height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 9vw;
+    scroll-snap-align: start;
+  }
+  html { scroll-snap-type: y mandatory; }
+
+  .eyebrow {
+    font-size: clamp(13px, 1.1vw, 18px);
+    letter-spacing: .18em; text-transform: uppercase;
+    color: #7a7973; margin-bottom: 3vh;
+  }
+  h1 {
+    font-size: clamp(56px, 9vw, 150px);
+    font-weight: 600; letter-spacing: -.03em; line-height: .95;
+  }
+  h1 .deva { color: #7a7973; font-weight: 400; }
+  .tagline {
+    font-size: clamp(20px, 2.4vw, 40px);
+    color: #3987e5; margin-top: 2.5vh; font-weight: 500;
+  }
+  .lede {
+    font-size: clamp(17px, 1.6vw, 27px);
+    color: #c3c2b7; margin-top: 5vh; max-width: 24em; line-height: 1.45;
+  }
+  .lede b { color: #ffffff; font-weight: 600; }
+  .foot {
+    margin-top: 7vh; font-size: clamp(13px, 1.1vw, 18px);
+    color: #7a7973; letter-spacing: .04em;
+  }
+  .rule { width: 88px; height: 3px; background: #3987e5; margin: 4vh 0; }
+  code {
+    font-family: "Cascadia Mono", Consolas, monospace;
+    color: #ffffff; background: #26262400; font-size: .95em;
+  }
+  .stat { display: flex; gap: 5vw; margin-top: 6vh; flex-wrap: wrap; }
+  .stat div { }
+  .stat .n {
+    font-size: clamp(30px, 4vw, 64px); font-weight: 600;
+    letter-spacing: -.02em; color: #3987e5;
+  }
+  .stat .l {
+    font-size: clamp(12px, 1vw, 16px); color: #7a7973;
+    letter-spacing: .1em; text-transform: uppercase; margin-top: .6vh;
+  }
+</style>
+
+<!-- FRAME 1 — opening. Hold ~6 seconds. -->
+<section>
+  <div class="eyebrow">Razorpay AI Buildathon &nbsp;·&nbsp; Track 03 — AI Revenue Recovery</div>
+  <h1>ANTAR <span class="deva">अंतर</span></h1>
+  <div class="tagline">Only the difference counts.</div>
+  <div class="rule"></div>
+  <p class="lede">
+    Every payment-recovery tool reports the money it recovered.<br>
+    None of them can tell you how much of it they <b>caused</b>.
+  </p>
+</section>
+
+<!-- FRAME 2 — closing. Hold ~8 seconds while you say the last line. -->
+<section>
+  <div class="eyebrow">What the control group proved</div>
+  <p class="lede" style="margin-top:0">
+    Same data. Same compliance rules. Same incident freeze.
+  </p>
+  <div class="stat">
+    <div><div class="n">2.6&times;</div><div class="l">net value created</div></div>
+    <div><div class="n">44%</div><div class="l">fewer contacts</div></div>
+    <div><div class="n">0</div><div class="l">messages during an outage</div></div>
+  </div>
+  <div class="rule"></div>
+  <p class="lede" style="font-size:clamp(19px,1.9vw,32px)">
+    Everyone will tell you what their agent recovered.<br>
+    We can tell you what it <b>actually caused</b> — including on our own numbers.
+  </p>
+  <div class="foot"><code>github.com/Vidhyan11/antar</code></div>
+</section>
