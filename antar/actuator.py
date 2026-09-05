@@ -66,6 +66,7 @@ class ActionResult:
     reference: str | None = None
     error: str | None = None
     rule: str = ""
+    idempotent: bool = False   # the object already existed; the key held
     request: dict[str, Any] = field(default_factory=dict)
 
 
@@ -90,6 +91,19 @@ class RazorpayClient:
         if self.key_id and not self.key_id.startswith("rzp_test_"):
             return "dry-run (refusing a non-test key)"
         return "dry-run (no credentials)"
+
+    @staticmethod
+    def _is_duplicate(err: str | None) -> bool:
+        """Did the gateway refuse this because we already created it?
+
+        Every write carries a stable idempotency key derived from the
+        transaction and the action, so replaying a run asks Razorpay to create
+        objects that already exist and it rejects them. That is the key doing
+        its job, not a failure -- the intended state (a link exists for this
+        transaction) is satisfied either way, and treating it as an error would
+        report a working safety mechanism as a broken integration.
+        """
+        return bool(err) and "already exists" in err
 
     def _post(self, path: str, body: dict[str, Any]) -> tuple[str | None, str | None]:
         token = base64.b64encode(f"{self.key_id}:{self.key_secret}".encode()).decode()
@@ -221,13 +235,19 @@ class Actuator:
             return ActionResult(record.txn_id, action, executed=False, dry_run=True,
                                 error="no handler for action")
 
+        duplicate = self.client._is_duplicate(err)
         return ActionResult(
             txn_id=record.txn_id,
             action=action,
-            executed=bool(ref) and err is None,
+            # A duplicate means the object exists, which is what we wanted.
+            executed=(bool(ref) and err is None) or duplicate,
             dry_run=not spend_live,
-            reference=ref or (f"dryrun_{uuid.uuid5(uuid.NAMESPACE_OID, idempotency).hex[:12]}"),
-            error=err,
+            reference=ref or (
+                idempotency if duplicate
+                else f"dryrun_{uuid.uuid5(uuid.NAMESPACE_OID, idempotency).hex[:12]}"
+            ),
+            error=None if duplicate else err,
+            idempotent=duplicate,
             request=body,
         )
 
@@ -242,6 +262,7 @@ class Actuator:
                 "dry_run": result.dry_run,
                 "reference": result.reference,
                 "error": result.error,
+                "idempotent": result.idempotent,
                 "rule": result.rule,
                 "mode": self.client.mode,
             })

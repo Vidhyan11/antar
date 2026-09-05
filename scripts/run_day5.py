@@ -140,7 +140,10 @@ def compute() -> dict[str, Any]:
         },
         "actions": {
             "total": len(actions),
-            "executed_live": sum(1 for a in actions if a.executed),
+            "executed_live": sum(1 for a in actions if a.executed and not a.idempotent),
+            "already_existed": sum(1 for a in actions if a.idempotent),
+            "failed": sum(1 for a in actions if a.error and not a.dry_run),
+            "errors": sorted({(a.error or "")[:110] for a in actions if a.error and not a.dry_run}),
             "dry_run": sum(1 for a in actions if a.dry_run),
             "blocked": sum(1 for a in actions if a.action == "blocked_by_incident"),
             "escalated": sum(1 for a in actions if a.action == "escalated_to_human"),
@@ -148,7 +151,7 @@ def compute() -> dict[str, Any]:
             "mode": client.mode,
             "sample": [
                 {"txn_id": a.txn_id, "action": a.action, "reference": a.reference,
-                 "executed": a.executed, "dry_run": a.dry_run}
+                 "executed": a.executed, "dry_run": a.dry_run, "idempotent": a.idempotent}
                 for a in actions[:6]
             ],
         },
@@ -207,17 +210,31 @@ def render(r: dict[str, Any]) -> None:
     banner("4. ACTIONS TAKEN")
     print(f"mode              : {act['mode']}")
     print(f"actions issued    : {act['total']:,}")
-    print(f"confirmed by API  : {act['executed_live']:,}")
+    print(f"created by API    : {act['executed_live']:,}")
+    print(f"already existed   : {act['already_existed']:,}   (idempotency key held on a replay)")
+    print(f"failed            : {act['failed']:,}")
     print(f"dry-run recorded  : {act['dry_run']:,}")
     print(f"blocked by freeze : {act['blocked']:,}")
     print(f"escalated to human: {act['escalated']:,}")
     print("\nby action type:")
     for name, count in sorted(act["by_action"].items(), key=lambda kv: -kv[1]):
         print(f"    {name:<26}{count:>6,}")
+    if act["errors"]:
+        print("\nerrors (never silent -- a failure that prints nothing is the worst kind):")
+        for e in act["errors"]:
+            print(f"    {e}")
+
     print("\nsample:")
     for s in act["sample"]:
-        tag = "LIVE" if s["executed"] else ("dry" if s["dry_run"] else "--")
+        tag = ("SAME" if s["idempotent"] else "LIVE") if s["executed"] else (
+            "dry" if s["dry_run"] else "FAIL")
         print(f"    {s['txn_id']:<14}{s['action']:<26}{tag:<5}{s['reference']}")
+
+    if act["already_existed"]:
+        print("\nSAME means Razorpay refused to create a duplicate. Every write carries a")
+        print("stable idempotency key derived from the transaction and the action, so")
+        print("replaying a run cannot double-charge anyone -- the second run creates")
+        print("nothing new, and that is the key working rather than an integration fault.")
 
     led = r["ledger"]
     print(f"\nledger: {led['entries']:,} entries, chain_ok={led['chain_ok']}")

@@ -259,3 +259,37 @@ def test_actions_are_allow_listed_per_class(cls):
     results = Actuator(RazorpayClient("", "")).execute([rec("p", BASE, cls=cls)])
     assert results[0].action == ACTION_BY_CLASS[cls]
     assert results[0].dry_run
+
+
+# ------------------------------------------------------------ idempotency
+
+def test_duplicate_reference_is_recognised_as_the_key_working():
+    """Razorpay rejects a write whose reference_id already exists.
+
+    That is the idempotency key doing its job -- the intended state (an object
+    exists for this transaction) is satisfied -- so it must not be reported as
+    a failed integration. Discovered by replaying a run against test mode and
+    watching three payment links come back as silent failures.
+    """
+    assert RazorpayClient._is_duplicate(
+        'HTTP 400: {"error":{"description":"payment link with given reference_id: '
+        'antar_pay_1_instrument_update_link already exists. Please use a unique one"}}'
+    )
+
+
+def test_other_errors_are_still_errors():
+    for err in ("HTTP 401: unauthorized", "HTTP 500: server error",
+                "URLError: connection refused", None):
+        assert not RazorpayClient._is_duplicate(err)
+
+
+def test_idempotency_key_is_stable_for_a_transaction():
+    """Same transaction, same action, same key -- across processes and runs."""
+    from antar.actuator import ACTION_BY_CLASS
+
+    r = rec("pay_42", BASE, cls=DeclineClass.D_DEAD_INSTRUMENT)
+    keys = set()
+    for _ in range(3):
+        action = ACTION_BY_CLASS[r.decline_class]
+        keys.add(f"antar_{r.txn_id}_{action}")
+    assert len(keys) == 1
